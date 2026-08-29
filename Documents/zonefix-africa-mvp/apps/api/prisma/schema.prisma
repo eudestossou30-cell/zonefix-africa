@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  TECHNICIAN
+  ADMIN
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELED
+}
+
+enum DiagnosticStatus {
+  RUNNING
+  RESOLVED
+  ESCALATED
+}
+
+enum InterventionStatus {
+  NEW
+  SELECTED
+  ACCEPTED
+  EN_ROUTE
+  ON_SITE
+  DIAGNOSIS
+  REPAIR
+  RESOLVED
+  CONFIRMED
+  CANCELED
+}
+
+model User {
+  id            String          @id @default(cuid())
+  firstName     String
+  lastName      String
+  email         String          @unique
+  phone         String?
+  city          String?
+  district      String?
+  passwordHash  String
+  role          Role            @default(OWNER)
+  verified      Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  subscriptions Subscription[]
+  zones         WifiZone[]
+  diagnostics   Diagnostic[]
+  interventions Intervention[]  @relation("ownerInterventions")
+  technicianJobs Intervention[] @relation("technicianInterventions")
+  ratings       Rating[]        @relation("ratingAuthor")
+}
+
+model Subscription {
+  id         String             @id @default(cuid())
+  userId     String
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount     Int                @default(5000)
+  status     SubscriptionStatus @default(PENDING)
+  startedAt  DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime           @default(now())
+  payments   Payment[]
+}
+
+model WifiZone {
+  id          String      @id @default(cuid())
+  ownerId     String
+  owner       User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name        String
+  city        String
+  district    String?
+  provider    String?
+  clients     Int         @default(0)
+  healthScore Int         @default(92)
+  status      String      @default("ONLINE")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  mikrotiks   Mikrotik[]
+  diagnostics Diagnostic[]
+}
+
+model Mikrotik {
+  id              String    @id @default(cuid())
+  zoneId          String
+  zone            WifiZone  @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  name            String
+  host            String
+  port            Int       @default(8728)
+  ssl             Boolean   @default(false)
+  username        String
+  passwordCipher  String
+  routerVersion   String?
+  online          Boolean   @default(false)
+  lastSeenAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  diagnostics     Diagnostic[]
+  auditLogs       AuditLog[]
+}
+
+model Diagnostic {
+  id             String           @id @default(cuid())
+  ownerId        String
+  owner          User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  zoneId         String?
+  zone           WifiZone?        @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  mikrotikId     String?
+  mikrotik       Mikrotik?        @relation(fields: [mikrotikId], references: [id], onDelete: SetNull)
+  equipment     String
+  issue          String
+  status        DiagnosticStatus  @default(RUNNING)
+  summary       String?
+  result        String?
+  confidence    Int?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  interventions Intervention[]
+  attachments   Attachment[]
+}
+
+model Intervention {
+  id           String              @id @default(cuid())
+  ownerId      String
+  owner        User               @relation("ownerInterventions", fields: [ownerId], references: [id], onDelete: Cascade)
+  technicianId String?
+  technician   User?               @relation("technicianInterventions", fields: [technicianId], references: [id], onDelete: SetNull)
+  diagnosticId String?
+  diagnostic   Diagnostic?        @relation(fields: [diagnosticId], references: [id], onDelete: SetNull)
+  status       InterventionStatus  @default(NEW)
+  title        String
+  price        Int?
+  commission   Int?
+  notes        String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  ratings      Rating[]
+  payments     Payment[]          @relation("interventionPayments")
+}
+
+model Rating {
+  id             String        @id @default(cuid())
+  interventionId String
+  intervention   Intervention  @relation(fields: [interventionId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User          @relation("ratingAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  stars          Int
+  comment        String?
+  createdAt      DateTime      @default(now())
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  subscriptionId        String?
+  subscription          Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  interventionId        String?
+  intervention          Intervention? @relation("interventionPayments", fields: [interventionId], references: [id], onDelete: SetNull)
+  amount                Int
+  type                  String
+  provider              String?
+  status                String        @default("PENDING")
+  reference             String?       @unique
+  providerTransactionId String?       @unique
+  method                String?
+  metadata              String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+}
+
+model Attachment {
+  id           String      @id @default(cuid())
+  diagnosticId String
+  diagnostic   Diagnostic  @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  filename     String
+  mimeType     String
+  path         String
+  createdAt    DateTime    @default(now())
+}
+
+model AuditLog {
+  id         String    @id @default(cuid())
+  mikrotikId String?
+  mikrotik   Mikrotik? @relation(fields: [mikrotikId], references: [id], onDelete: SetNull)
+  userId     String?
+  action     String
+  payload    String?
+  result     String?
+  createdAt  DateTime  @default(now())
+}

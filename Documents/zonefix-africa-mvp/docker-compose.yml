@@ -1,0 +1,20 @@
+services:
+  zonefix-api:
+    build:
+      context: ./apps/api
+    env_file:
+      - ./apps/api/.env
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./apps/api/data:/app/data
+    restart: unless-stopped
+
+  zonefix-web:
+    build:
+      context: ./apps/web
+    ports:
+      - "5173:80"
+    depends_on:
+      - zonefix-api
+    restart: unless-stopped
