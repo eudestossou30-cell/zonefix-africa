@@ -243,11 +243,46 @@ function TechnicianDashboard({user}) {
 function AdminDashboard({user}) {
   const nav=useNavigate(); const [data,setData]=useState(null);
   useEffect(()=>{api.get('/admin/overview').then(r=>setData(r.data)).catch(()=>{})},[]);
-  return <div className="app-shell"><aside className="sidebar"><Logo/><div className="side-menu"><SideLink to="/dashboard" icon={<Gauge/>} text="Vue générale"/><SideLink to="/dashboard" icon={<Users/>} text="Propriétaires"/><SideLink to="/dashboard" icon={<Wrench/>} text="Techniciens"/><SideLink to="/dashboard" icon={<CreditCard/>} text="Paiements"/></div><div className="side-bottom"><div className="side-user"><div className="avatar">A</div><div><strong>{user.firstName}</strong><span>ADMINISTRATEUR</span></div></div><button onClick={()=>{localStorage.removeItem('zonefix_token');nav('/')}}><LogOut size={17}/> Déconnexion</button></div></aside>
+  return <div className="app-shell"><aside className="sidebar"><Logo/><div className="side-menu"><SideLink to="/dashboard" icon={<Gauge/>} text="Vue générale"/><SideLink to="/admin/owners" icon={<Users/>} text="Propriétaires"/><SideLink to="/admin/technicians" icon={<Wrench/>} text="Techniciens"/><SideLink to="/admin/payments" icon={<CreditCard/>} text="Paiements"/></div><div className="side-bottom"><div className="side-user"><div className="avatar">A</div><div><strong>{user.firstName}</strong><span>ADMINISTRATEUR</span></div></div><button onClick={()=>{localStorage.removeItem('zonefix_token');nav('/')}}><LogOut size={17}/> Déconnexion</button></div></aside>
     <main className="dashboard-main"><div className="topbar"><div><span className="section-kicker">ADMINISTRATION</span><h1>Centre de contrôle ZoneFix</h1></div></div><div className="admin-stats">{[['Propriétaires',data?.owners||0,<Users/>],['Techniciens',data?.technicians||0,<Wrench/>],['Interventions',data?.interventions||0,<Activity/>],['Revenus',`${(data?.revenue||0).toLocaleString('fr-FR')} F`,<CreditCard/>]].map(([t,v,i])=><div className="card admin-stat" key={t}><div>{i}</div><span>{t}</span><strong>{v}</strong></div>)}</div><div className="card"><span className="section-kicker">CENTRE DE CONTRÔLE</span><h2>Modules prêts pour le MVP</h2><div className="admin-list"><span>✓ Gestion des comptes</span><span>✓ Abonnements 5 000 FCFA</span><span>✓ Interventions et commissions</span><span>✓ Journal des actions MikroTik</span><span>✓ Diagnostic IA</span></div></div></main>
   </div>
 }
 
+function AdminOwners(){
+  const nav=useNavigate();
+  const [owners,setOwners]=useState([]);
+  const [busy,setBusy]=useState(true);
+  useEffect(()=>{api.get('/admin/owners').then(r=>setOwners(r.data.owners||[])).catch(()=>nav('/login')).finally(()=>setBusy(false))},[]);
+  return <div className="app-shell"><aside className="sidebar"><Logo/><div className="side-menu"><SideLink to="/dashboard" icon={<Gauge/>} text="Vue generale"/><SideLink to="/admin/owners" icon={<Users/>} text="Proprietaires"/><SideLink to="/admin/technicians" icon={<Wrench/>} text="Techniciens"/><SideLink to="/admin/payments" icon={<CreditCard/>} text="Paiements"/></div></aside>
+    <main className="dashboard-main"><div className="topbar"><div><span className="section-kicker">ADMINISTRATION</span><h1>Proprietaires</h1></div></div>
+      <div className="card">{busy?<Loading/>:owners.length?<table className="admin-table"><thead><tr><th>Nom</th><th>Email</th><th>Telephone</th><th>Ville</th><th>Verifie</th></tr></thead><tbody>{owners.map(o=><tr key={o.id}><td>{o.firstName} {o.lastName}</td><td>{o.email}</td><td>{o.phone||'-'}</td><td>{o.city||'-'}</td><td>{o.verified?'Oui':'Non'}</td></tr>)}</tbody></table>:<div className="empty">Aucun proprietaire pour le moment.</div>}</div>
+    </main>
+  </div>
+}
+
+function AdminTechnicians(){
+  const nav=useNavigate();
+  const [technicians,setTechnicians]=useState([]);
+  const [busy,setBusy]=useState(true);
+  useEffect(()=>{api.get('/admin/technicians').then(r=>setTechnicians(r.data.technicians||[])).catch(()=>nav('/login')).finally(()=>setBusy(false))},[]);
+  return <div className="app-shell"><aside className="sidebar"><Logo/><div className="side-menu"><SideLink to="/dashboard" icon={<Gauge/>} text="Vue generale"/><SideLink to="/admin/owners" icon={<Users/>} text="Proprietaires"/><SideLink to="/admin/technicians" icon={<Wrench/>} text="Techniciens"/><SideLink to="/admin/payments" icon={<CreditCard/>} text="Paiements"/></div></aside>
+    <main className="dashboard-main"><div className="topbar"><div><span className="section-kicker">ADMINISTRATION</span><h1>Techniciens</h1></div></div>
+      <div className="card">{busy?<Loading/>:technicians.length?<table className="admin-table"><thead><tr><th>Nom</th><th>Email</th><th>Telephone</th><th>Ville</th><th>Verifie</th></tr></thead><tbody>{technicians.map(t=><tr key={t.id}><td>{t.firstName} {t.lastName}</td><td>{t.email}</td><td>{t.phone||'-'}</td><td>{t.city||'-'}</td><td>{t.verified?'Oui':'Non'}</td></tr>)}</tbody></table>:<div className="empty">Aucun technicien pour le moment.</div>}</div>
+    </main>
+  </div>
+}
+
+function AdminPayments(){
+  const nav=useNavigate();
+  const [payments,setPayments]=useState([]);
+  const [busy,setBusy]=useState(true);
+  useEffect(()=>{api.get('/admin/payments').then(r=>setPayments(r.data.payments||[])).catch(()=>nav('/login')).finally(()=>setBusy(false))},[]);
+  return <div className="app-shell"><aside className="sidebar"><Logo/><div className="side-menu"><SideLink to="/dashboard" icon={<Gauge/>} text="Vue generale"/><SideLink to="/admin/owners" icon={<Users/>} text="Proprietaires"/><SideLink to="/admin/technicians" icon={<Wrench/>} text="Techniciens"/><SideLink to="/admin/payments" icon={<CreditCard/>} text="Paiements"/></div></aside>
+    <main className="dashboard-main"><div className="topbar"><div><span className="section-kicker">ADMINISTRATION</span><h1>Paiements</h1></div></div>
+      <div className="card">{busy?<Loading/>:payments.length?<table className="admin-table"><thead><tr><th>ID</th><th>Montant</th><th>Statut</th><th>Methode</th></tr></thead><tbody>{payments.map(p=><tr key={p.id}><td>{p.id}</td><td>{p.amount} F</td><td>{p.status}</td><td>{p.method||'-'}</td></tr>)}</tbody></table>:<div className="empty">Aucun paiement pour le moment.</div>}</div>
+    </main>
+  </div>
+}
 function BellIcon(){return <span className="bell">●</span>}
 function SideLink({to,icon,text}){return <Link to={to} className="side-link">{icon}<span>{text}</span></Link>}
 function Metric({icon,label,value}){return <div className="metric"><div>{icon}</div><span>{label}</span><strong>{value}</strong></div>}
@@ -312,6 +347,9 @@ export default function App(){
     <Route path="/diagnostic" element={auth?<Diagnostic/>:<Login/>}/>
     <Route path="/payment" element={auth?<Payment/>:<Login/>}/>
     <Route path="/payment/result" element={auth?<PaymentResult/>:<Login/>}/>
+    <Route path="/admin/owners" element={auth?<AdminOwners/>:<Login/>}/>
+    <Route path="/admin/technicians" element={auth?<AdminTechnicians/>:<Login/>}/>
+    <Route path="/admin/payments" element={auth?<AdminPayments/>:<Login/>}/>
     <Route path="*" element={<Landing onLogin={()=>location.href='/login'}/>}/>
   </Routes>
 }
