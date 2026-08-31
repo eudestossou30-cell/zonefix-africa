@@ -435,6 +435,31 @@ app.get('/api/admin/overview', requireAuth, requireRole('ADMIN'), async (_, res)
   res.json({ owners, technicians, interventions, revenue: payments._sum.amount || 0 });
 });
 
+app.get('/api/admin/owners', requireAuth, requireRole('ADMIN'), async (_, res) => {
+  const owners = await prisma.user.findMany({
+    where: { role: 'OWNER' },
+    select: { id: true, firstName: true, lastName: true, email: true, phone: true, city: true, district: true, verified: true },
+    orderBy: { id: 'desc' }
+  });
+  res.json({ owners });
+});
+
+app.get('/api/admin/technicians', requireAuth, requireRole('ADMIN'), async (_, res) => {
+  const technicians = await prisma.user.findMany({
+    where: { role: 'TECHNICIAN' },
+    select: { id: true, firstName: true, lastName: true, email: true, phone: true, city: true, district: true, verified: true },
+    orderBy: { id: 'desc' }
+  });
+  res.json({ technicians });
+});
+
+app.get('/api/admin/payments', requireAuth, requireRole('ADMIN'), async (_, res) => {
+  const payments = await prisma.payment.findMany({
+    orderBy: { id: 'desc' },
+    take: 100
+  });
+  res.json({ payments });
+});
 app.use((err, req, res, next) => {
   console.error(err);
   if (err instanceof z.ZodError) return res.status(400).json({ error: 'Données invalides', details: err.issues });
